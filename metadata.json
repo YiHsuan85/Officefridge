@@ -1,0 +1,6 @@
+{
+  "name": "冰箱戶口名簿",
+  "description": "一個實用的辦公室冰箱食物紀錄與過期追蹤工具，包含自動色彩警示、即時庫存統計圖表與成員下拉選單。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
