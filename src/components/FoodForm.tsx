@@ -1,13 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { OWNERS, OwnerName, FoodItem } from '../types';
-import { Calendar, Plus, RefreshCcw, User, Tag, ShoppingBag } from 'lucide-react';
+import { Calendar, Plus, RefreshCcw, User, Tag, ShoppingBag, Edit3, X } from 'lucide-react';
 
 interface FoodFormProps {
   onAddItem: (itemDetails: { name: string; owner: OwnerName; expiryDate: string }) => void;
   todayStr: string;
+  editingItem: FoodItem | null;
+  onUpdateItem: (id: string, updatedDetails: { name: string; owner: OwnerName; expiryDate: string }) => void;
+  onCancelEdit: () => void;
 }
 
-export default function FoodForm({ onAddItem, todayStr }: FoodFormProps) {
+export default function FoodForm({ onAddItem, todayStr, editingItem, onUpdateItem, onCancelEdit }: FoodFormProps) {
   const [name, setName] = useState('');
   const [owner, setOwner] = useState<OwnerName>('Wei'); // default
   const [expiryDate, setExpiryDate] = useState(() => {
@@ -17,6 +20,21 @@ export default function FoodForm({ onAddItem, todayStr }: FoodFormProps) {
     return baseDate.toISOString().split('T')[0];
   });
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Sync state if editingItem shifts
+  useEffect(() => {
+    if (editingItem) {
+      setName(editingItem.name);
+      setOwner(editingItem.owner as OwnerName);
+      setExpiryDate(editingItem.expiryDate);
+    } else {
+      setName('');
+      const baseDate = new Date(todayStr);
+      baseDate.setDate(baseDate.getDate() + 7);
+      setExpiryDate(baseDate.toISOString().split('T')[0]);
+    }
+    setErrorMessage('');
+  }, [editingItem?.id, todayStr]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,11 +51,19 @@ export default function FoodForm({ onAddItem, todayStr }: FoodFormProps) {
       return;
     }
 
-    onAddItem({
-      name: trimmedName,
-      owner,
-      expiryDate,
-    });
+    if (editingItem) {
+      onUpdateItem(editingItem.id, {
+        name: trimmedName,
+        owner,
+        expiryDate,
+      });
+    } else {
+      onAddItem({
+        name: trimmedName,
+        owner,
+        expiryDate,
+      });
+    }
 
     // Reset input states nicely
     setName('');
@@ -60,13 +86,27 @@ export default function FoodForm({ onAddItem, todayStr }: FoodFormProps) {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="border-b border-slate-100 pb-3">
           <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
-            <span className="p-1 px-1.5 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-bold font-display">
-              + Add
-            </span>
-            新增冰箱保管紀錄
+            {editingItem ? (
+              <>
+                <span className="p-1 px-1.5 bg-amber-50 text-amber-700 rounded-lg text-xs font-bold font-display">
+                  ⚡ Edit
+                </span>
+                編輯冰箱保管紀錄
+              </>
+            ) : (
+              <>
+                <span className="p-1 px-1.5 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-bold font-display">
+                  + Add
+                </span>
+                新增冰箱保管紀錄
+              </>
+            )}
           </h3>
           <p className="text-xs text-slate-400 mt-1">
-             輸入名稱、歸屬成員及指定過期日，即可登錄冰箱白板。
+            {editingItem 
+              ? `正在編輯「${editingItem.name}」的登錄設定。`
+              : '輸入名稱、歸屬成員及指定過期日，即可登錄冰箱白板。'
+            }
           </p>
         </div>
 
@@ -171,13 +211,33 @@ export default function FoodForm({ onAddItem, todayStr }: FoodFormProps) {
           </div>
         )}
 
-        <button
-          type="submit"
-          className="w-full mt-4 flex items-center justify-center gap-1.5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:transform active:scale-98 transition-all text-white rounded-xl font-bold text-sm shadow-sm hover:shadow-md cursor-pointer"
-        >
-          <Plus className="w-4 h-4" strokeWidth={2.5} />
-          確認登錄冰箱
-        </button>
+        {editingItem ? (
+          <div className="flex gap-2.5 mt-4">
+            <button
+              type="button"
+              onClick={onCancelEdit}
+              className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 active:transform active:scale-98 transition-all text-slate-705 border border-slate-200 rounded-xl font-bold text-xs cursor-pointer flex items-center justify-center gap-1 shadow-sm"
+            >
+              <X className="w-4 h-4 text-slate-500" />
+              取消
+            </button>
+            <button
+              type="submit"
+              className="flex-[2] py-2.5 bg-indigo-600 hover:bg-indigo-700 active:transform active:scale-98 transition-all text-white rounded-xl font-bold text-xs shadow-sm hover:shadow-md cursor-pointer flex items-center justify-center gap-1"
+            >
+              <Edit3 className="w-4 h-4" strokeWidth={2} />
+              儲存修改
+            </button>
+          </div>
+        ) : (
+          <button
+            type="submit"
+            className="w-full mt-4 flex items-center justify-center gap-1.5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:transform active:scale-98 transition-all text-white rounded-xl font-bold text-sm shadow-sm hover:shadow-md cursor-pointer"
+          >
+            <Plus className="w-4 h-4" strokeWidth={2.5} />
+            確認登錄冰箱
+          </button>
+        )}
       </form>
 
 
