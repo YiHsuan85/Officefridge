@@ -5,7 +5,7 @@ import { defineConfig } from 'vite';
 
 export default defineConfig(() => {
   return {
-    // ⚠️ 修正重點：加上這一行，指定 GitHub Pages 的專案路徑名稱（前後都要有斜線）
+    // ⚠️ 指定 GitHub Pages 的專案子路徑路徑名稱
     base: '/Officefridge/', 
     
     plugins: [react(), tailwindcss()],
