@@ -84,7 +84,7 @@ export default function FoodForm({ onAddItem, todayStr }: FoodFormProps) {
                 setName(e.target.value);
                 if (errorMessage) setErrorMessage('');
               }}
-              placeholder="例如：優格、鮮乳、肉乾..."
+              placeholder="例如：藍莓希臘優格、鮮乳、肉乾..."
               className="w-full pl-3 pr-10 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 focus:bg-white transition-all text-slate-800"
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-300 font-medium">
@@ -180,8 +180,7 @@ export default function FoodForm({ onAddItem, todayStr }: FoodFormProps) {
         </button>
       </form>
 
-      
-      </div>
+
     </div>
   );
 }
