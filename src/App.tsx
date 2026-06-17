@@ -40,7 +40,7 @@ const SEED_DATA: FoodItem[] = [
   {
     id: 'seed-5',
     name: '鮮奶茶 (大)',
-    owner: '龐龐',
+    owner: 'Q',
     expiryDate: '2026-06-12', // Expired (-3 days), and isEaten is TRUE! (row is grayed out/muted)
     isEaten: true,
     createdAt: '2026-06-11T16:45:00.000Z',
@@ -56,7 +56,7 @@ const SEED_DATA: FoodItem[] = [
   {
     id: 'seed-7',
     name: 'Red Bull 能量飲料',
-    owner: '687',
+    owner: '67',
     expiryDate: '2026-07-15', // 30 days away (yellow-green)
     isEaten: false,
     createdAt: '2026-06-14T11:00:00.000Z',
