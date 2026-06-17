@@ -7,7 +7,7 @@ import { RefreshCw, Sparkles, AlertTriangle } from 'lucide-react';
 const SEED_DATA: FoodItem[] = [
   {
     id: 'seed-1',
-    name: '全家瑞穗全脂鮮乳 936ml',
+    name: '瑞穗鮮乳 936ml',
     owner: 'Wei',
     expiryDate: '2026-06-30', // > 14 days away from 2026-06-15 (yellow-green)
     isEaten: false,
@@ -15,7 +15,7 @@ const SEED_DATA: FoodItem[] = [
   },
   {
     id: 'seed-2',
-    name: '石安牧場溫泉蛋 (2入)',
+    name: '溫泉蛋 (2入)',
     owner: '恩7',
     expiryDate: '2026-06-25', // 10 days away (yellow)
     isEaten: false,
@@ -23,7 +23,7 @@ const SEED_DATA: FoodItem[] = [
   },
   {
     id: 'seed-3',
-    name: '主廚極選排骨招牌便當',
+    name: '招牌便當',
     owner: 'Wu',
     expiryDate: '2026-06-14', // -1 day away (overdue, red, warnings visible!)
     isEaten: false,
@@ -31,7 +31,7 @@ const SEED_DATA: FoodItem[] = [
   },
   {
     id: 'seed-4',
-    name: '起司火腿三明治',
+    name: '三明治',
     owner: '大白',
     expiryDate: '2026-06-18', // 3 days away (red)
     isEaten: false,
@@ -39,7 +39,7 @@ const SEED_DATA: FoodItem[] = [
   },
   {
     id: 'seed-5',
-    name: '珍煮丹波霸黑糖鮮奶茶 (大)',
+    name: '鮮奶茶 (大)',
     owner: '龐龐',
     expiryDate: '2026-06-12', // Expired (-3 days), and isEaten is TRUE! (row is grayed out/muted)
     isEaten: true,
@@ -47,7 +47,7 @@ const SEED_DATA: FoodItem[] = [
   },
   {
     id: 'seed-6',
-    name: '馬修嚴選野生藍莓優格',
+    name: '優格',
     owner: '語蓁',
     expiryDate: '2026-06-24', // 9 days away (yellow)
     isEaten: false,
@@ -55,7 +55,7 @@ const SEED_DATA: FoodItem[] = [
   },
   {
     id: 'seed-7',
-    name: 'Red Bull 紅牛能量飲料藍莓風味',
+    name: 'Red Bull 能量飲料',
     owner: '687',
     expiryDate: '2026-07-15', // 30 days away (yellow-green)
     isEaten: false,
