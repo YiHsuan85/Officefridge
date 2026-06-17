@@ -210,9 +210,6 @@ export default function App() {
                 <h4 className="text-sm font-bold text-rose-800 flex items-center gap-1.5">
                   過期警報！！共有 <span className="underline decoration-wavy font-extrabold text-base">{overdueCount}</span> 件過期
                 </h4>
-                <p className="text-xs text-rose-600 mt-0.5">
-                  冰箱清倉日將依約清空下架，請擁有者儘速處理。
-                </p>
               </div>
             </div>
             <div className="flex items-center gap-2 text-xs font-mono">
