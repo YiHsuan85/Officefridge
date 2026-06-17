@@ -6,7 +6,7 @@
         {
           "id": "seed-1",
           "data": {
-            "name": "瑞穗 936ml",
+            "name": "瑞穗鮮乳",
             "owner": "Wei",
             "expiryDate": "2026-06-30",
             "isEaten": false,
@@ -16,16 +16,6 @@
         {
           "id": "seed-2",
           "data": {
-            "name": "溫泉蛋 (2入)",
-            "owner": "恩7",
-            "expiryDate": "2026-06-25",
-            "isEaten": false,
-            "createdAt": "2026-06-12T10:15:00.000Z"
-          }
-        },
-        {
-          "id": "seed-3",
-          "data": {
             "name": "招牌便當",
             "owner": "Wu",
             "expiryDate": "2026-06-14",
@@ -34,7 +24,7 @@
           }
         },
         {
-          "id": "seed-4",
+          "id": "seed-3",
           "data": {
             "name": "三明治",
             "owner": "大白",
@@ -44,29 +34,9 @@
           }
         },
         {
-          "id": "seed-5",
+          "id": "seed-4",
           "data": {
-            "name": "鮮奶茶 (大)",
-            "owner": "Q",
-            "expiryDate": "2026-06-12",
-            "isEaten": true,
-            "createdAt": "2026-06-11T16:45:00.000Z"
-          }
-        },
-        {
-          "id": "seed-6",
-          "data": {
-            "name": "優格",
-            "owner": "語蓁",
-            "expiryDate": "2026-06-24",
-            "isEaten": false,
-            "createdAt": "2026-06-13T14:20:00.000Z"
-          }
-        },
-        {
-          "id": "seed-7",
-          "data": {
-            "name": "能量飲料",
+            "name": "紅牛",
             "owner": "67",
             "expiryDate": "2026-07-15",
             "isEaten": false,
