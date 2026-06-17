@@ -98,7 +98,7 @@ export default function FoodForm({ onAddItem, todayStr, editingItem, onUpdateIte
                 <span className="p-1 px-1.5 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-bold font-display">
                   + Add
                 </span>
-                新增冰箱保管紀錄
+                新增家族成員
               </>
             )}
           </h3>
@@ -235,7 +235,7 @@ export default function FoodForm({ onAddItem, todayStr, editingItem, onUpdateIte
             className="w-full mt-4 flex items-center justify-center gap-1.5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:transform active:scale-98 transition-all text-white rounded-xl font-bold text-sm shadow-sm hover:shadow-md cursor-pointer"
           >
             <Plus className="w-4 h-4" strokeWidth={2.5} />
-            確認登錄冰箱
+            新增成員
           </button>
         )}
       </form>
