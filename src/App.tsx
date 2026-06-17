@@ -69,6 +69,9 @@ export default function App() {
   // Set reference simulated "Today's Date" to align with current time 2026-06-15.
   const [todayStr, setTodayStr] = useState<string>('2026-06-15');
 
+  // Active editing item state
+  const [editingItem, setEditingItem] = useState<FoodItem | null>(null);
+
   // Load items & configurations on initialize
   useEffect(() => {
     const cachedItems = localStorage.getItem('fridge_food_items_list');
@@ -131,6 +134,31 @@ export default function App() {
     updateAndPersistItems([newItem, ...items]);
   };
 
+  // 1b. Update existing food item
+  const handleUpdateItem = (id: string, updatedDetails: { name: string; owner: OwnerName; expiryDate: string }) => {
+    const updated = items.map(item => {
+      if (item.id === id) {
+        return {
+          ...item,
+          name: updatedDetails.name,
+          owner: updatedDetails.owner,
+          expiryDate: updatedDetails.expiryDate,
+        };
+      }
+      return item;
+    });
+    updateAndPersistItems(updated);
+    setEditingItem(null);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingItem(null);
+  };
+
+  const handleEditItemSelect = (item: FoodItem) => {
+    setEditingItem(item);
+  };
+
   // 2. Toggle item eaten/finished state
   const handleToggleEaten = (id: string) => {
     const updated = items.map(item => {
@@ -149,12 +177,16 @@ export default function App() {
   const handleDeleteItem = (id: string) => {
     const updated = items.filter(item => item.id !== id);
     updateAndPersistItems(updated);
+    if (editingItem?.id === id) {
+      setEditingItem(null);
+    }
   };
 
   // 4. Force default seed reset helper
   const handleResetData = () => {
     updateAndPersistItems(SEED_DATA);
     setTodayStr('2026-06-15');
+    setEditingItem(null);
     localStorage.setItem('fridge_simulated_today', '2026-06-15');
   };
 
@@ -223,13 +255,16 @@ export default function App() {
         {/* 2. Base content: split form left and core data tables list on right */}
         <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           
-          {/* Left tools configuration panel: add form and date shift simulation */}
+          {/* Left tools configuration panel: add/edit form and date shift simulation */}
           <div className="lg:col-span-4 space-y-6">
             
-            {/* Main ADD record Form */}
+            {/* Main ADD/EDIT record Form */}
             <FoodForm 
               onAddItem={handleAddItem} 
               todayStr={todayStr} 
+              editingItem={editingItem}
+              onUpdateItem={handleUpdateItem}
+              onCancelEdit={handleCancelEdit}
             />
           </div>
 
@@ -241,6 +276,8 @@ export default function App() {
               onDeleteItem={handleDeleteItem}
               getDateDiff={getDateDiff}
               todayStr={todayStr}
+              onEditItem={handleEditItemSelect}
+              activeEditId={editingItem?.id}
             />
           </div>
         </section>
