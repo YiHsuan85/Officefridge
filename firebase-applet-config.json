@@ -1,10 +1,21 @@
-{
-  "projectId": "aerobic-entity-mcf5x",
-  "appId": "1:833077789518:web:028c78cd1da3b647d4541f",
-  "apiKey": "AIzaSyCX2fYxBhhFXAccEyhnGnAP07HLbTlYeN0",
-  "authDomain": "aerobic-entity-mcf5x.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-b718e330-9f64-4143-8188-3b2b397fcf25",
-  "storageBucket": "aerobic-entity-mcf5x.firebasestorage.app",
-  "messagingSenderId": "833077789518",
-  "measurementId": ""
-}
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyA-mpffoLsxjwghXiImtJXmQaEEhCYF8pM",
+  authDomain: "smart-food-database.firebaseapp.com",
+  projectId: "smart-food-database",
+  storageBucket: "smart-food-database.firebasestorage.app",
+  messagingSenderId: "808611212388",
+  appId: "1:808611212388:web:4c63c7795b2cd893da8371",
+  measurementId: "G-PV8BDV1KDM"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
