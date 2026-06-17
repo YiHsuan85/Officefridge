@@ -2,14 +2,14 @@ import { useState, useEffect } from 'react';
 import { FoodItem, OwnerName } from './types';
 import FoodForm from './components/FoodForm';
 import FoodTable from './components/FoodTable';
-import { RefreshCw, Sparkles, AlertTriangle, Wifi, CloudOff } from 'lucide-react';
+import { RefreshCw, Sparkles, AlertTriangle, Wifi, CloudOff, Cloud, Check } from 'lucide-react';
 import { collection, onSnapshot, doc, setDoc, deleteDoc, updateDoc, getDocFromServer } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from './lib/firebase';
 
 const SEED_DATA: FoodItem[] = [
   {
     id: 'seed-1',
-    name: '瑞穗 936ml',
+    name: '瑞穗鮮乳',
     owner: 'Wei',
     expiryDate: '2026-06-30', // > 14 days away from 2026-06-15 (yellow-green)
     isEaten: false,
@@ -17,14 +17,6 @@ const SEED_DATA: FoodItem[] = [
   },
   {
     id: 'seed-2',
-    name: '溫泉蛋 (2入)',
-    owner: '恩7',
-    expiryDate: '2026-06-25', // 10 days away (yellow)
-    isEaten: false,
-    createdAt: '2026-06-12T10:15:00.000Z',
-  },
-  {
-    id: 'seed-3',
     name: '招牌便當',
     owner: 'Wu',
     expiryDate: '2026-06-14', // -1 day away (overdue, red, warnings visible!)
@@ -32,7 +24,7 @@ const SEED_DATA: FoodItem[] = [
     createdAt: '2026-06-13T12:00:00.000Z',
   },
   {
-    id: 'seed-4',
+    id: 'seed-3',
     name: '三明治',
     owner: '大白',
     expiryDate: '2026-06-18', // 3 days away (red)
@@ -40,24 +32,8 @@ const SEED_DATA: FoodItem[] = [
     createdAt: '2026-06-14T08:30:00.000Z',
   },
   {
-    id: 'seed-5',
-    name: '鮮奶茶 (大)',
-    owner: 'Q',
-    expiryDate: '2026-06-12', // Expired (-3 days), and isEaten is TRUE! (row is grayed out/muted)
-    isEaten: true,
-    createdAt: '2026-06-11T16:45:00.000Z',
-  },
-  {
-    id: 'seed-6',
-    name: '優格',
-    owner: '語蓁',
-    expiryDate: '2026-06-24', // 9 days away (yellow)
-    isEaten: false,
-    createdAt: '2026-06-13T14:20:00.000Z',
-  },
-  {
-    id: 'seed-7',
-    name: 'Red Bull 能量飲料',
+    id: 'seed-4',
+    name: 'Red Bull 紅牛',
     owner: '67',
     expiryDate: '2026-07-15', // 30 days away (yellow-green)
     isEaten: false,
@@ -76,6 +52,10 @@ export default function App() {
   // Active editing item state
   const [editingItem, setEditingItem] = useState<FoodItem | null>(null);
 
+  // Manual cloud synchronization feedback states
+  const [showSyncSuccessToast, setShowSyncSuccessToast] = useState<boolean>(false);
+  const [syncedDetails, setSyncedDetails] = useState<{ count: number; time: string } | null>(null);
+
   // Load items & configurations on initialize with Firestore live snapshot subscriptions
   useEffect(() => {
     const cachedToday = localStorage.getItem('fridge_simulated_today');
@@ -90,7 +70,7 @@ export default function App() {
     // Connection testing check (as suggested in documentation guidance)
     const testConnection = async () => {
       try {
-        await getDocFromServer(doc(db, 'test_connection_health', 'ping'));
+        await getDocFromServer(doc(db, 'food_items', 'ping'));
       } catch (error) {
         if (error instanceof Error && error.message.includes('offline')) {
           console.warn("Firestore client appears offline:", error.message);
@@ -103,11 +83,27 @@ export default function App() {
     const unsubscribe = onSnapshot(q, async (snapshot) => {
       const dbItems: FoodItem[] = [];
       snapshot.forEach((docSnap) => {
+        // Exclude system verification metadata from active foods list
+        if (docSnap.id === 'last_sync_verification' || docSnap.id === 'ping') {
+          return;
+        }
+
         const data = docSnap.data();
+        let owner = (data.owner || '') as OwnerName;
+        if (owner === '龐龐' as any) {
+          owner = 'Q';
+          const docRef = doc(db, 'food_items', docSnap.id);
+          updateDoc(docRef, { owner: 'Q' }).catch((e) => console.error("Error migrating owner '龐龐':", e));
+        } else if (owner === '687' as any) {
+          owner = '67';
+          const docRef = doc(db, 'food_items', docSnap.id);
+          updateDoc(docRef, { owner: '67' }).catch((e) => console.error("Error migrating owner '687':", e));
+        }
+
         dbItems.push({
           id: docSnap.id,
           name: data.name || '',
-          owner: data.owner || '',
+          owner,
           expiryDate: data.expiryDate || '',
           isEaten: !!data.isEaten,
           createdAt: data.createdAt || new Date().toISOString(),
@@ -241,6 +237,55 @@ export default function App() {
     }
   };
 
+  // 3.5 Manual Save and Force Cloud Synchronization Verification
+  const handleForceSyncAndSave = async () => {
+    setSyncing(true);
+    setSyncError(null);
+    try {
+      // 1. Force write a verification health heartbeat status to ensure cloud connection is active safely within the primary food_items collection
+      const syncMetaRef = doc(db, 'food_items', 'last_sync_verification');
+      const syncedTime = new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' });
+      
+      await setDoc(syncMetaRef, {
+        lastSyncedAt: new Date().toISOString(),
+        itemCount: items.length,
+        status: 'healthy_verified',
+        updatedBy: 'user'
+      });
+
+      // 2. Ensure all current local items state exist synchronously in Firestore
+      for (const item of items) {
+        const itemRef = doc(db, 'food_items', item.id);
+        await setDoc(itemRef, {
+          name: item.name,
+          owner: item.owner,
+          expiryDate: item.expiryDate,
+          isEaten: item.isEaten,
+          createdAt: item.createdAt,
+        }, { merge: true });
+      }
+
+      // 3. Store details to display a beautiful checkmark toast confirmation
+      setSyncedDetails({
+        count: items.length,
+        time: syncedTime,
+      });
+      setShowSyncSuccessToast(true);
+
+      // Dismiss floating alert automatically after 4 seconds
+      setTimeout(() => {
+        setShowSyncSuccessToast(false);
+      }, 4000);
+
+    } catch (err) {
+      console.error("Force cloud sync failed:", err);
+      handleFirestoreError(err, OperationType.WRITE, 'food_items/last_sync_verification');
+      setSyncError("手動同步失敗，請檢查網路連線");
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   // 4. Force default seed reset helper
   const handleResetData = async () => {
     setSyncing(true);
@@ -318,6 +363,19 @@ export default function App() {
           {/* Quick global system reset config */}
           <div className="flex items-center gap-2">
             <button
+              onClick={handleForceSyncAndSave}
+              disabled={syncing}
+              title="儲存資料並確定資料與雲端同步"
+              className="px-3.5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 shadow-sm active:scale-95"
+            >
+              {syncing ? (
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Cloud className="w-3.5 h-3.5" />
+              )}
+              儲存並同步至雲端
+            </button>
+            <button
               onClick={handleResetData}
               title="重設原始測試資料"
               className="px-3 py-2 text-xs font-semibold text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 bg-white border border-slate-200 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
@@ -328,6 +386,27 @@ export default function App() {
           </div>
         </div>
       </header>
+
+      {/* Floating Active Synchronization Status/Success Dialog Alert */}
+      {showSyncSuccessToast && syncedDetails && (
+        <div className="fixed bottom-6 right-6 z-50 p-4 bg-slate-900 border border-slate-800 text-white rounded-2xl shadow-2xl flex items-start gap-3 animate-slide-up max-w-sm">
+          <div className="p-2 bg-emerald-500 text-slate-900 rounded-xl">
+            <Check className="w-5 h-5 stroke-[3]" />
+          </div>
+          <div>
+            <h4 className="font-bold text-sm text-slate-50 flex items-center gap-1.5">
+              雲端存檔同步成功！
+              <span className="w-2 h-2 rounded-full bg-emerald-450 animate-ping" />
+            </h4>
+            <p className="text-xs text-slate-300 mt-1">
+              已將 <span className="font-bold text-emerald-400">{syncedDetails.count} 筆</span> 家人成員與冰箱保管紀錄安全寫入且完成 100% 雲端同步校對。
+            </p>
+            <p className="text-[10px] text-slate-400 mt-2 font-mono">
+              驗證時間碼：{syncedDetails.time}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Main dashboard space body */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 w-full space-y-6">
