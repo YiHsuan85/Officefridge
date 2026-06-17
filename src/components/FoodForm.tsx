@@ -84,7 +84,7 @@ export default function FoodForm({ onAddItem, todayStr }: FoodFormProps) {
                 setName(e.target.value);
                 if (errorMessage) setErrorMessage('');
               }}
-              placeholder="例如：藍莓希臘優格、鮮乳、肉乾..."
+              placeholder="例如：優格、鮮乳、肉乾..."
               className="w-full pl-3 pr-10 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 focus:bg-white transition-all text-slate-800"
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-300 font-medium">
@@ -180,10 +180,6 @@ export default function FoodForm({ onAddItem, todayStr }: FoodFormProps) {
         </button>
       </form>
 
-      {/* Nice fridge storage safety tips info at footer */}
-      <div className="mt-6 p-3 bg-indigo-50/40 rounded-2xl border border-indigo-100/30 text-[11px] text-indigo-900/80 leading-relaxed">
-        <span className="font-bold block text-indigo-900 mb-0.5">💡 冰箱保鮮約定：</span>
-        <span>為了全體同仁權益，凡是「過期未食用」的食物，將依法每週五進行大清空；享用完畢請隨手勾選「食用完畢」，以利冰箱大空間統計釋放！</span>
       </div>
     </div>
   );
