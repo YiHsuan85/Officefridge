@@ -197,8 +197,137 @@ export default function FoodTable({ items, onToggleEaten, onDeleteItem, getDateD
         </button>
       </div>
 
-      {/* Main List Table */}
-      <div className="overflow-x-auto rounded-2xl border border-slate-100">
+      {/* Mobile view as concise list cards (Visible on mobile only) */}
+      <div className="sm:hidden space-y-3">
+        {processedItems.length === 0 ? (
+          <div className="py-12 text-center text-slate-400 bg-slate-50/50 rounded-2xl border border-slate-100">
+            <div className="flex flex-col items-center justify-center space-y-2">
+              <span className="text-3xl">📥</span>
+              <p className="text-sm font-semibold text-slate-500">查無任何冰箱滿足條件食物</p>
+              <p className="text-xs text-slate-400">請嘗試調整上方的篩選設定或在左側註冊新項目</p>
+            </div>
+          </div>
+        ) : (
+          processedItems.map((item) => {
+            const diffDays = getDateDiff(item.expiryDate);
+            const isOverdue = diffDays < 0;
+            const styleMeta = getExpiryBgClass(diffDays);
+            const shouldGrayOut = item.isEaten;
+            const showUrgentOverdueAlert = isOverdue && !item.isEaten;
+
+            return (
+              <div
+                key={item.id}
+                className={`p-3.5 rounded-2xl border transition-all relative flex gap-3 ${
+                  shouldGrayOut 
+                    ? 'opacity-40 grayscale filter line-through bg-slate-50/70 text-slate-400 border-slate-105' 
+                    : isOverdue 
+                    ? 'bg-rose-50/10 border-rose-100'
+                    : 'bg-white border-slate-100 shadow-sm'
+                } ${showUrgentOverdueAlert ? 'border-l-4 border-l-rose-500' : ''}`}
+              >
+                {/* Checkbox leading */}
+                <div className="flex items-start justify-center pt-0.5 select-none">
+                  <button
+                    onClick={() => onToggleEaten(item.id)}
+                    className={`p-1.5 focus:outline-none transition-transform hover:scale-110 active:scale-95 cursor-pointer ${
+                      item.isEaten ? 'text-emerald-500' : 'text-slate-400 shadow-none'
+                    }`}
+                  >
+                    {item.isEaten ? (
+                      <CheckSquare className="w-5 h-5 fill-emerald-50 bg-white rounded" />
+                    ) : (
+                      <Square className="w-5 h-5 bg-white rounded" />
+                    )}
+                  </button>
+                </div>
+
+                {/* Content Area */}
+                <div className="flex-1 min-w-0 space-y-1">
+                  {/* Name, Owner */}
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="font-bold text-slate-800 tracking-tight text-sm break-all leading-snug">
+                      {item.name}
+                    </span>
+                    <span className="shrink-0 px-2 py-0.5 text-[10px] text-slate-600 bg-slate-100 rounded-md border border-slate-200/60 font-semibold flex items-center gap-0.5">
+                      👤 {item.owner}
+                    </span>
+                  </div>
+
+                  {/* Urgent Alert - "過期提醒!!" with TWO red exclamation marks */}
+                  {showUrgentOverdueAlert && (
+                    <div className="flex items-center gap-0.5 text-rose-600 font-bold text-xs animate-pulse">
+                      <AlertCircle className="w-3.5 h-3.5 fill-rose-50 stroke-[2.5]" />
+                      <span>過期提醒</span>
+                      <span className="text-red-600 font-extrabold text-sm leading-none">!!</span>
+                    </div>
+                  )}
+
+                  {/* Expiry Date badge & Remaining calculation status */}
+                  <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                    <span className={`px-2 py-0.5 rounded-md text-[10.5px] font-mono font-bold tracking-tight inline-flex items-center gap-1 ${styleMeta.badge}`}>
+                      <Calendar className="w-3 h-3" />
+                      {item.expiryDate}
+                    </span>
+                    
+                    <span className="font-mono text-xs">
+                      {item.isEaten ? (
+                        <span className="text-slate-400 font-medium">不需追蹤</span>
+                      ) : isOverdue ? (
+                        <span className="text-rose-600 font-extrabold inline-flex items-center gap-0.5">
+                          已過期 {Math.abs(diffDays)} 天
+                          <span className="text-red-700 text-xs animate-bounce font-black">!!</span>
+                        </span>
+                      ) : diffDays === 0 ? (
+                        <span className="text-orange-500 font-extrabold animate-pulse">
+                          今天過期! 🙏
+                        </span>
+                      ) : (
+                        <span className={`${styleMeta.text} font-bold`}>
+                          剩餘 {diffDays} 天
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Deletion action */}
+                <div className="flex items-start select-none">
+                  {confirmDeleteId === item.id ? (
+                    <div className="flex flex-col items-center gap-1 bg-rose-50 p-1 rounded-xl border border-rose-100">
+                      <button
+                        onClick={() => {
+                          onDeleteItem(item.id);
+                          setConfirmDeleteId(null);
+                        }}
+                        className="px-2 py-0.5 text-[10px] font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg shadow-sm cursor-pointer whitespace-nowrap"
+                      >
+                        確定
+                      </button>
+                      <button
+                        onClick={() => setConfirmDeleteId(null)}
+                        className="px-1.5 py-0.5 text-[10px] font-medium text-slate-500 hover:bg-slate-100 rounded-lg cursor-pointer whitespace-nowrap"
+                      >
+                        取消
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmDeleteId(item.id)}
+                      className="p-1 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all focus:outline-none cursor-pointer"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Main List Table (Visible on tablet/desktop displays) */}
+      <div className="hidden sm:block overflow-x-auto rounded-2xl border border-slate-100">
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-slate-50 text-slate-500 font-semibold text-xs border-b border-slate-100">
@@ -312,7 +441,7 @@ export default function FoodTable({ items, onToggleEaten, onDeleteItem, getDateD
 
                     {/* Expiry date displaying color rules backgrounds */}
                     <td className="py-3 px-4">
-                      <span className={`px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold tracking-tight inline-flex items-center gap-1.5 ${styleMeta.badge}`}>
+                      <span className={`px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold tracking-tight inline-flex items-center gap-1 ${styleMeta.badge}`}>
                         <Calendar className="w-3.5 h-3.5 stroke-[2]" />
                         {item.expiryDate}
                       </span>
