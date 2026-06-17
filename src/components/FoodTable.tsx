@@ -317,23 +317,23 @@ export default function FoodTable({ items, onToggleEaten, onDeleteItem, getDateD
                 </div>
               </th>
               {/* Expiry Date column */}
-              <th className="py-3 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none w-44" onClick={() => handleSort('expiry')}>
+              <th className="py-3 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none w-32" onClick={() => handleSort('expiry')}>
                 <div className="flex items-center gap-1">
                   過期日期
                   <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
                 </div>
               </th>
               {/* Remaining calculation state tag */}
-              <th className="py-3 px-4 w-40">剩餘天數</th>
+              <th className="py-3 px-4 w-28">剩餘天數</th>
               {/* Owner Name column */}
-              <th className="py-3 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none w-32" onClick={() => handleSort('owner')}>
+              <th className="py-3 px-4 cursor-pointer hover:bg-slate-100/50 transition-colors select-none w-24" onClick={() => handleSort('owner')}>
                 <div className="flex items-center gap-1">
                   擁有者
                   <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
                 </div>
               </th>
               {/* Actions column */}
-              <th className="py-3 px-4 w-16 text-center">刪除</th>
+              <th className="py-3 px-4 w-14 text-center">刪除</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
