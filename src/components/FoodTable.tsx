@@ -461,14 +461,9 @@ export default function FoodTable({ items, onToggleEaten, onDeleteItem, getDateD
                           就在今天過期! 🙏
                         </span>
                       ) : (
-                        <div className="flex flex-col gap-0.5">
-                          <span className={`${styleMeta.text} font-bold`}>
-                             剩餘 {diffDays} 天
-                          </span>
-                          <span className="text-[10px] text-slate-400 select-none">
-                            {diffDays > 14 ? '🥛 安全保鮮極期' : diffDays >= 7 ? '⚠️ 注意準備食用' : '🚨 即刻吃完!!'}
-                          </span>
-                        </div>
+                        <span className={`${styleMeta.text} font-bold`}>
+                           剩餘 {diffDays} 天
+                        </span>
                       )}
                     </td>
 
