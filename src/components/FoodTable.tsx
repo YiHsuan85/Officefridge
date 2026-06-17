@@ -16,7 +16,6 @@ type SortOrder = 'asc' | 'desc';
 export default function FoodTable({ items, onToggleEaten, onDeleteItem, getDateDiff, todayStr }: FoodTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedOwnerFilter, setSelectedOwnerFilter] = useState<string>('All');
-  const [activeTab, setActiveTab] = useState<'all' | 'active' | 'expired' | 'eaten'>('all');
   const [sortKey, setSortKey] = useState<SortKey>('expiry');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -49,18 +48,6 @@ export default function FoodTable({ items, onToggleEaten, onDeleteItem, getDateD
       result = result.filter(item => item.owner === selectedOwnerFilter);
     }
 
-    // 3. Tab Categorization Filter
-    if (activeTab === 'active') {
-      result = result.filter(item => !item.isEaten);
-    } else if (activeTab === 'expired') {
-      result = result.filter(item => {
-        const diff = getDateDiff(item.expiryDate);
-        return diff < 0 && !item.isEaten;
-      });
-    } else if (activeTab === 'eaten') {
-      result = result.filter(item => item.isEaten);
-    }
-
     // 4. Sort calculations
     result.sort((a, b) => {
       let comparison = 0;
@@ -77,7 +64,7 @@ export default function FoodTable({ items, onToggleEaten, onDeleteItem, getDateD
     });
 
     return result;
-  }, [items, searchTerm, selectedOwnerFilter, activeTab, sortKey, sortOrder, getDateDiff]);
+  }, [items, searchTerm, selectedOwnerFilter, sortKey, sortOrder, getDateDiff]);
 
   // Expiration color indicator logic aligned to Technical Grid Theme Spec
   const getExpiryBgClass = (diffDays: number) => {
@@ -109,34 +96,14 @@ export default function FoodTable({ items, onToggleEaten, onDeleteItem, getDateD
     <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 space-y-4">
       {/* Filtering Header Section */}
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 border-b border-slate-100 pb-4">
-        {/* Navigation Tabs */}
-        <div className="flex flex-wrap gap-1 bg-slate-100 p-1 rounded-xl">
-          <button
-            onClick={() => setActiveTab('all')}
-            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-              activeTab === 'all' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-800'
-            }`}
-          >
+        {/* Title Indicator */}
+        <div className="flex items-center gap-2">
+          <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
+            <span className="p-1 px-1.5 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-bold font-display">
+              List
+            </span>
             全部保管食物 ({items.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('active')}
-            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-              activeTab === 'active' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            享用保鮮中 ({items.filter(i => !i.isEaten).length})
-          </button>
-          <button
-            onClick={() => setActiveTab('expired')}
-            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1 ${
-              activeTab === 'expired' 
-                ? 'bg-rose-500 text-white shadow-sm' 
-                : 'text-rose-600 hover:bg-rose-50'
-            }`}
-          >
-            🚨 過期未食用 ({items.filter(item => getDateDiff(item.expiryDate) < 0 && !item.isEaten).length})
-          </button>
+          </h3>
         </div>
 
         {/* Search and Owner selection controls */}
