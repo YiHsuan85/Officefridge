@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { FoodItem, OwnerName } from './types';
 import FoodForm from './components/FoodForm';
 import FoodTable from './components/FoodTable';
-import { RefreshCw, Sparkles, AlertTriangle } from 'lucide-react';
+import { RefreshCw, Sparkles, AlertTriangle, Wifi, CloudOff } from 'lucide-react';
+import { collection, onSnapshot, doc, setDoc, deleteDoc, updateDoc, getDocFromServer } from 'firebase/firestore';
+import { db, handleFirestoreError, OperationType } from './lib/firebase';
 
 const SEED_DATA: FoodItem[] = [
   {
     id: 'seed-1',
-    name: '瑞穗鮮乳 936ml',
+    name: '瑞穗 936ml',
     owner: 'Wei',
     expiryDate: '2026-06-30', // > 14 days away from 2026-06-15 (yellow-green)
     isEaten: false,
@@ -65,6 +67,8 @@ const SEED_DATA: FoodItem[] = [
 
 export default function App() {
   const [items, setItems] = useState<FoodItem[]>([]);
+  const [syncing, setSyncing] = useState<boolean>(true);
+  const [syncError, setSyncError] = useState<string | null>(null);
   
   // Set reference simulated "Today's Date" to align with current time 2026-06-15.
   const [todayStr, setTodayStr] = useState<string>('2026-06-15');
@@ -72,21 +76,9 @@ export default function App() {
   // Active editing item state
   const [editingItem, setEditingItem] = useState<FoodItem | null>(null);
 
-  // Load items & configurations on initialize
+  // Load items & configurations on initialize with Firestore live snapshot subscriptions
   useEffect(() => {
-    const cachedItems = localStorage.getItem('fridge_food_items_list');
     const cachedToday = localStorage.getItem('fridge_simulated_today');
-
-    if (cachedItems) {
-      try {
-        setItems(JSON.parse(cachedItems));
-      } catch (e) {
-        setItems(SEED_DATA);
-      }
-    } else {
-      setItems(SEED_DATA);
-      localStorage.setItem('fridge_food_items_list', JSON.stringify(SEED_DATA));
-    }
 
     if (cachedToday) {
       setTodayStr(cachedToday);
@@ -94,13 +86,69 @@ export default function App() {
       setTodayStr('2026-06-15');
       localStorage.setItem('fridge_simulated_today', '2026-06-15');
     }
-  }, []);
 
-  // Standard persisting wrapper
-  const updateAndPersistItems = (newItems: FoodItem[]) => {
-    setItems(newItems);
-    localStorage.setItem('fridge_food_items_list', JSON.stringify(newItems));
-  };
+    // Connection testing check (as suggested in documentation guidance)
+    const testConnection = async () => {
+      try {
+        await getDocFromServer(doc(db, 'test_connection_health', 'ping'));
+      } catch (error) {
+        if (error instanceof Error && error.message.includes('offline')) {
+          console.warn("Firestore client appears offline:", error.message);
+        }
+      }
+    };
+    testConnection();
+
+    const q = collection(db, 'food_items');
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
+      const dbItems: FoodItem[] = [];
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        dbItems.push({
+          id: docSnap.id,
+          name: data.name || '',
+          owner: data.owner || '',
+          expiryDate: data.expiryDate || '',
+          isEaten: !!data.isEaten,
+          createdAt: data.createdAt || new Date().toISOString(),
+        });
+      });
+
+      // Sort by createdAt descending initially so new records show first in UI
+      dbItems.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+
+      // Always commit the items array to the react state so the screen reflects reality instantly
+      setItems(dbItems);
+
+      // Auto-seeds Firestore on initial first boot setup if collection is empty AND we haven't seeded yet
+      const hasSeededBefore = localStorage.getItem('fridge_db_seeded') === 'true';
+      if (snapshot.empty && !hasSeededBefore) {
+        try {
+          for (const item of SEED_DATA) {
+            const docRef = doc(db, 'food_items', item.id);
+            await setDoc(docRef, {
+              name: item.name,
+              owner: item.owner,
+              expiryDate: item.expiryDate,
+              isEaten: item.isEaten,
+              createdAt: item.createdAt,
+            });
+          }
+          localStorage.setItem('fridge_db_seeded', 'true');
+        } catch (err) {
+          handleFirestoreError(err, OperationType.WRITE, 'food_items');
+        }
+      }
+      setSyncing(false);
+      setSyncError(null);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, 'food_items');
+      setSyncError("Cloud Sync Offline");
+      setSyncing(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const handleUpdateToday = (dateVal: string) => {
     setTodayStr(dateVal);
@@ -121,34 +169,39 @@ export default function App() {
   };
 
   // 1. Add food item
-  const handleAddItem = (details: { name: string; owner: OwnerName; expiryDate: string }) => {
-    const newItem: FoodItem = {
-      id: `food-${Date.now()}`,
-      name: details.name,
-      owner: details.owner,
-      expiryDate: details.expiryDate,
-      isEaten: false,
-      createdAt: new Date().toISOString(),
-    };
-
-    updateAndPersistItems([newItem, ...items]);
+  const handleAddItem = async (details: { name: string; owner: OwnerName; expiryDate: string }) => {
+    const newId = `food-${Date.now()}`;
+    const path = `food_items/${newId}`;
+    try {
+      const docRef = doc(db, 'food_items', newId);
+      await setDoc(docRef, {
+        name: details.name,
+        owner: details.owner,
+        expiryDate: details.expiryDate,
+        isEaten: false,
+        createdAt: new Date().toISOString(),
+      });
+      // Mark as seeded in local storage since they completed a manual insert
+      localStorage.setItem('fridge_db_seeded', 'true');
+    } catch (e) {
+      handleFirestoreError(e, OperationType.WRITE, path);
+    }
   };
 
   // 1b. Update existing food item
-  const handleUpdateItem = (id: string, updatedDetails: { name: string; owner: OwnerName; expiryDate: string }) => {
-    const updated = items.map(item => {
-      if (item.id === id) {
-        return {
-          ...item,
-          name: updatedDetails.name,
-          owner: updatedDetails.owner,
-          expiryDate: updatedDetails.expiryDate,
-        };
-      }
-      return item;
-    });
-    updateAndPersistItems(updated);
-    setEditingItem(null);
+  const handleUpdateItem = async (id: string, updatedDetails: { name: string; owner: OwnerName; expiryDate: string }) => {
+    const path = `food_items/${id}`;
+    try {
+      const docRef = doc(db, 'food_items', id);
+      await updateDoc(docRef, {
+        name: updatedDetails.name,
+        owner: updatedDetails.owner,
+        expiryDate: updatedDetails.expiryDate,
+      });
+      setEditingItem(null);
+    } catch (e) {
+      handleFirestoreError(e, OperationType.WRITE, path);
+    }
   };
 
   const handleCancelEdit = () => {
@@ -160,35 +213,65 @@ export default function App() {
   };
 
   // 2. Toggle item eaten/finished state
-  const handleToggleEaten = (id: string) => {
-    const updated = items.map(item => {
-      if (item.id === id) {
-        return {
-          ...item,
-          isEaten: !item.isEaten,
-        };
-      }
-      return item;
-    });
-    updateAndPersistItems(updated);
+  const handleToggleEaten = async (id: string) => {
+    const path = `food_items/${id}`;
+    try {
+      const item = items.find(i => i.id === id);
+      if (!item) return;
+      const docRef = doc(db, 'food_items', id);
+      await updateDoc(docRef, {
+        isEaten: !item.isEaten,
+      });
+    } catch (e) {
+      handleFirestoreError(e, OperationType.WRITE, path);
+    }
   };
 
   // 3. Delete food item from system
-  const handleDeleteItem = (id: string) => {
-    const updated = items.filter(item => item.id !== id);
-    updateAndPersistItems(updated);
-    if (editingItem?.id === id) {
-      setEditingItem(null);
+  const handleDeleteItem = async (id: string) => {
+    const path = `food_items/${id}`;
+    try {
+      const docRef = doc(db, 'food_items', id);
+      await deleteDoc(docRef);
+      if (editingItem?.id === id) {
+        setEditingItem(null);
+      }
+    } catch (e) {
+      handleFirestoreError(e, OperationType.DELETE, path);
     }
   };
 
   // 4. Force default seed reset helper
-  const handleResetData = () => {
-    updateAndPersistItems(SEED_DATA);
-    setTodayStr('2026-06-15');
-    setEditingItem(null);
-    localStorage.setItem('fridge_simulated_today', '2026-06-15');
+  const handleResetData = async () => {
+    setSyncing(true);
+    try {
+      // Clean everything
+      for (const item of items) {
+        const docRef = doc(db, 'food_items', item.id);
+        await deleteDoc(docRef);
+      }
+      // Re-populate seeds
+      for (const item of SEED_DATA) {
+        const docRef = doc(db, 'food_items', item.id);
+        await setDoc(docRef, {
+          name: item.name,
+          owner: item.owner,
+          expiryDate: item.expiryDate,
+          isEaten: item.isEaten,
+          createdAt: item.createdAt,
+        });
+      }
+      setTodayStr('2026-06-15');
+      setEditingItem(null);
+      localStorage.setItem('fridge_simulated_today', '2026-06-15');
+      localStorage.setItem('fridge_db_seeded', 'true');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, 'food_items/reset');
+    } finally {
+      setSyncing(false);
+    }
   };
+
 
   // Helper calculation counts
   const overdueCount = items.filter(i => getDateDiff(i.expiryDate) < 0).length;
@@ -207,11 +290,27 @@ export default function App() {
             </div>
             <div>
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Smart Office Management</span>
-              <h1 className="text-xl font-black text-slate-800 tracking-tight flex items-center gap-2">
+              <h1 className="text-xl font-black text-slate-800 tracking-tight flex flex-wrap items-center gap-2">
                 冰箱戶口名簿
                 <span className="hidden sm:inline-block px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[9px] font-bold rounded border border-indigo-100">
                   Grid v2.1
                 </span>
+                {syncing ? (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[9px] font-bold rounded border border-indigo-100 animate-pulse">
+                    <RefreshCw className="w-2.5 h-2.5 animate-spin" />
+                    雲端同步中...
+                  </span>
+                ) : syncError ? (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-rose-50 text-rose-600 text-[9px] font-bold rounded border border-rose-100">
+                    <CloudOff className="w-2.5 h-2.5" />
+                    連線失敗
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[9px] font-bold rounded border border-emerald-100">
+                    <Wifi className="w-2.5 h-2.5 text-emerald-550 shrink-0" />
+                    已連線 Firebase Cloud
+                  </span>
+                )}
               </h1>
             </div>
           </div>
