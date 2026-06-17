@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { FoodItem, OWNERS, OwnerName } from '../types';
-import { Search, Calendar, User, Trash2, CheckSquare, Square, AlertCircle, ArrowUpDown, RefreshCw, Sparkles } from 'lucide-react';
+import { Search, Calendar, User, Trash2, CheckSquare, Square, AlertCircle, ArrowUpDown, RefreshCw, Sparkles, Edit3 } from 'lucide-react';
 
 interface FoodTableProps {
   items: FoodItem[];
@@ -8,12 +8,14 @@ interface FoodTableProps {
   onDeleteItem: (id: string) => void;
   getDateDiff: (expiry: string) => number;
   todayStr: string;
+  onEditItem: (item: FoodItem) => void;
+  activeEditId?: string | null;
 }
 
 type SortKey = 'expiry' | 'owner' | 'name' | 'createdAt';
 type SortOrder = 'asc' | 'desc';
 
-export default function FoodTable({ items, onToggleEaten, onDeleteItem, getDateDiff, todayStr }: FoodTableProps) {
+export default function FoodTable({ items, onToggleEaten, onDeleteItem, getDateDiff, todayStr, onEditItem, activeEditId }: FoodTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedOwnerFilter, setSelectedOwnerFilter] = useState<string>('All');
   const [sortKey, setSortKey] = useState<SortKey>('expiry');
@@ -186,12 +188,14 @@ export default function FoodTable({ items, onToggleEaten, onDeleteItem, getDateD
               <div
                 key={item.id}
                 className={`p-3.5 rounded-2xl border transition-all relative flex gap-3 ${
-                  shouldGrayOut 
+                  activeEditId === item.id
+                    ? 'ring-2 ring-indigo-500 bg-indigo-50/20 border-indigo-200 shadow'
+                    : shouldGrayOut 
                     ? 'opacity-40 grayscale filter line-through bg-slate-50/70 text-slate-400 border-slate-105' 
                     : isOverdue 
                     ? 'bg-rose-50/10 border-rose-100'
                     : 'bg-white border-slate-100 shadow-sm'
-                } ${showUrgentOverdueAlert ? 'border-l-4 border-l-rose-500' : ''}`}
+                } ${showUrgentOverdueAlert && activeEditId !== item.id ? 'border-l-4 border-l-rose-500' : ''}`}
               >
                 {/* Checkbox leading */}
                 <div className="flex items-start justify-center pt-0.5 select-none">
@@ -210,11 +214,16 @@ export default function FoodTable({ items, onToggleEaten, onDeleteItem, getDateD
                 </div>
 
                 {/* Content Area */}
-                <div className="flex-1 min-w-0 space-y-1">
+                <div 
+                  onClick={() => onEditItem(item)}
+                  title="點擊以重新編輯此食物項目"
+                  className="flex-1 min-w-0 space-y-1 cursor-pointer select-none group/content"
+                >
                   {/* Name, Owner */}
                   <div className="flex items-start justify-between gap-2">
-                    <span className="font-bold text-slate-800 tracking-tight text-sm break-all leading-snug">
+                    <span className="font-bold text-slate-800 tracking-tight text-sm break-all leading-snug group-hover/content:text-indigo-600 transition-colors flex items-center gap-1 flex-wrap">
                       {item.name}
+                      <Edit3 className="w-3 h-3 text-indigo-500 opacity-0 group-hover/content:opacity-100 transition-all shrink-0" />
                     </span>
                     <span className="shrink-0 px-2 py-0.5 text-[10px] text-slate-600 bg-slate-100 rounded-md border border-slate-200/60 font-semibold flex items-center gap-0.5">
                       👤 {item.owner}
@@ -358,12 +367,14 @@ export default function FoodTable({ items, onToggleEaten, onDeleteItem, getDateD
                   <tr
                     key={item.id}
                     className={`group transition-all text-sm ${
-                      shouldGrayOut 
+                      activeEditId === item.id
+                        ? 'bg-indigo-50/75 border-l-4 border-l-indigo-600 font-medium'
+                        : shouldGrayOut 
                         ? 'opacity-40 grayscale filter line-through bg-slate-50/70 text-slate-400' 
                         : isOverdue 
                         ? 'bg-rose-50/5 hover:bg-rose-50/20' 
                         : 'hover:bg-slate-50/40'
-                    } ${showUrgentOverdueAlert ? 'border-l-4 border-rose-500' : ''}`}
+                    } ${showUrgentOverdueAlert && activeEditId !== item.id ? 'border-l-4 border-rose-500' : ''}`}
                   >
                     {/* Checkbox toggle completion selection */}
                     <td className="py-3 px-4 text-center border-r border-slate-100/50">
@@ -383,10 +394,15 @@ export default function FoodTable({ items, onToggleEaten, onDeleteItem, getDateD
                     </td>
 
                     {/* Food Name details with alerts if any */}
-                    <td className="py-3 px-4">
+                    <td 
+                      className="py-3 px-4 cursor-pointer select-none group/name" 
+                      onClick={() => onEditItem(item)}
+                      title="點擊以重新編輯此食物項目"
+                    >
                       <div className="flex flex-col">
-                        <span className="font-bold text-slate-800 tracking-tight group-hover:text-indigo-600 transition-colors">
+                        <span className="font-bold text-slate-800 tracking-tight group-hover:text-indigo-600 group-hover/name:text-indigo-600 transition-colors flex items-center gap-1.5">
                           {item.name}
+                          <Edit3 className="w-3.5 h-3.5 text-indigo-500 opacity-0 group-hover/name:opacity-100 transition-opacity shrink-0" />
                         </span>
                         
                         {/* Urgent Alert Text Label - "過期提醒!!" with TWO red exclamation marks */}
