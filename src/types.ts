@@ -7,9 +7,9 @@ export interface FoodItem {
   createdAt: string;
 }
 
-export type OwnerName = 'Wei' | '恩7' | 'Wu' | '龐龐' | '語蓁' | '大白' | '687';
+export type OwnerName = 'Wei' | '恩7' | 'Wu' | 'Q' | '語蓁' | '大白' | '67';
 
-export const OWNERS: OwnerName[] = ['Wei', '恩7', 'Wu', '龐龐', '語蓁', '大白', '687'];
+export const OWNERS: OwnerName[] = ['Wei', '恩7', 'Wu', 'Q', '語蓁', '大白', '67'];
 
 export interface StockStats {
   total: number;
