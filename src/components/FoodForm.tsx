@@ -180,6 +180,7 @@ export default function FoodForm({ onAddItem, todayStr }: FoodFormProps) {
         </button>
       </form>
 
+      
       </div>
     </div>
   );
