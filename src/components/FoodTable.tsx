@@ -104,7 +104,7 @@ export default function FoodTable({ items, onToggleEaten, onDeleteItem, getDateD
             <span className="p-1 px-1.5 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-bold font-display">
               List
             </span>
-            全部保管食物 ({items.length})
+            成員 ({items.length})
           </h3>
         </div>
 
